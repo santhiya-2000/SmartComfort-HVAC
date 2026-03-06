@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # SmartComfort Backend API
+  smartcomfort-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://smartcomfort:password@postgres:5432/smartcomfort_db
+      - REDIS_URL=redis://redis:6379
+      - ENVIRONMENT=production
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=smartcomfort_db
+      - POSTGRES_USER=smartcomfort
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deployment/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartcomfort -d smartcomfort_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployment/nginx.conf:/etc/nginx/nginx.conf
+      - ./deployment/ssl:/etc/nginx/ssl
+    depends_on:
+      - smartcomfort-backend
+    restart: unless-stopped
+
+  # Power BI Integration Service (Optional)
+  powerbi-connector:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile.powerbi
+    environment:
+      - POWERBI_WORKSPACE_ID=${POWERBI_WORKSPACE_ID}
+      - POWERBI_CLIENT_ID=${POWERBI_CLIENT_ID}
+      - POWERBI_CLIENT_SECRET=${POWERBI_CLIENT_SECRET}
+      - SMARTCOMFORT_API_URL=http://smartcomfort-backend:8000
+    depends_on:
+      - smartcomfort-backend
+    restart: unless-stopped
+    profiles:
+      - powerbi
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  default:
+    name: smartcomfort-network
