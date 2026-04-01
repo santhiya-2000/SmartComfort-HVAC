@@ -11,6 +11,7 @@ import json
 import os
 from dotenv import load_dotenv
 from powerbi_integration import powerbi_integration
+from data_processor import data_processor
 
 # Load environment variables
 load_dotenv()
@@ -563,6 +564,81 @@ async def export_powerbi_data(dataset_type: str):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Real Building Data Endpoints
+@app.get("/api/buildings")
+async def get_all_buildings(year: Optional[int] = None):
+    """Get all building energy data, optionally for a specific year"""
+    try:
+        buildings = data_processor.load_all_building_data(year=year)
+        return JSONResponse(content=buildings)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/years")
+async def get_available_years():
+    """Get list of available years for data"""
+    try:
+        years = data_processor.get_available_years()
+        return JSONResponse(content=years)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/yearly-consumption")
+async def get_yearly_consumption():
+    """Get yearly consumption data for all buildings"""
+    try:
+        yearly_data = data_processor.get_yearly_consumption_by_building()
+        return JSONResponse(content=yearly_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/buildings/{building_id}")
+async def get_building_by_id(building_id: int):
+    """Get specific building data by ID"""
+    try:
+        buildings = data_processor.load_all_building_data()
+        building = next((b for b in buildings if b['id'] == building_id), None)
+        if not building:
+            raise HTTPException(status_code=404, detail="Building not found")
+        return JSONResponse(content=building)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/buildings/type/{building_type}")
+async def get_buildings_by_type(building_type: str):
+    """Get buildings by type"""
+    try:
+        buildings = data_processor.load_all_building_data()
+        filtered_buildings = [b for b in buildings if b['type'].lower() == building_type.lower()]
+        return JSONResponse(content=filtered_buildings)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/buildings/attention-needed")
+async def get_buildings_needing_attention():
+    """Get buildings that need attention"""
+    try:
+        buildings = data_processor.load_all_building_data()
+        attention_buildings = [b for b in buildings if b['status'] != 'optimal']
+        return JSONResponse(content=attention_buildings)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/summary")
+async def get_summary_stats():
+    """Get summary statistics for all buildings"""
+    try:
+        buildings = data_processor.load_all_building_data()
+        summary = data_processor.get_summary_stats(buildings)
+        return JSONResponse(content=summary)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "timestamp": datetime.now()}
 
 if __name__ == "__main__":
     import uvicorn

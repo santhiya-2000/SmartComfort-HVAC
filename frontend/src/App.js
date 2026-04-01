@@ -1,32 +1,38 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useState } from 'react';
 import Navbar from './components/Navbar';
-import Dashboard from './components/Dashboard';
-import Survey from './components/Survey';
-import Analytics from './components/Analytics';
-import BuildingRecommendations from './components/BuildingRecommendations';
-import EnergySavings from './components/EnergySavings';
-import ActionableIntelligence from './components/ActionableIntelligence';
-import PowerBIIntegration from './components/PowerBIIntegration';
+import Home from './components/Home';
+import Action from './components/Action';
+import SurveyForm from './components/SurveyForm';
+import ChatBot from './components/ChatBot';
+import YearlyDashboard from './components/YearlyDashboard';
 
 function App() {
+  const [activeTab, setActiveTab] = useState('home');
+
+  const renderContent = () => {
+    switch(activeTab) {
+      case 'home':
+        return <Home />;
+      case 'action':
+        return <Action />;
+      case 'survey':
+        return <SurveyForm />;
+      case 'chatbot':
+        return <ChatBot />;
+      case 'yearly':
+        return <YearlyDashboard />;
+      default:
+        return <Home />;
+    }
+  };
+
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <main className="container mx-auto px-4 py-8">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/survey" element={<Survey />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/recommendations" element={<BuildingRecommendations />} />
-            <Route path="/savings" element={<EnergySavings />} />
-            <Route path="/intelligence" element={<ActionableIntelligence />} />
-            <Route path="/powerbi" element={<PowerBIIntegration />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <main className="container mx-auto px-4 py-8">
+        {renderContent()}
+      </main>
+    </div>
   );
 }
 

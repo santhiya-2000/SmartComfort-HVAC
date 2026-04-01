@@ -8,6 +8,11 @@ import {
 } from 'lucide-react';
 
 const BuildingCard = ({ building }) => {
+  // Add safety checks for building data
+  if (!building) {
+    return <div className="border border-gray-200 rounded-lg p-4">Loading building data...</div>;
+  }
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'optimal':
@@ -40,18 +45,23 @@ const BuildingCard = ({ building }) => {
     return 'text-red-600';
   };
 
-  const tempDifference = building.recommendedTemp - building.currentTemp;
+  // Safe calculations with fallbacks
+  const currentTemp = building.currentTemp || 0;
+  const recommendedTemp = building.recommendedTemp || 0;
+  const efficiency = building.efficiency || 0;
+  const savings = building.savings || 0;
+  const tempDifference = recommendedTemp - currentTemp;
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 text-sm">{building.name}</h3>
-          <p className="text-xs text-gray-500 mt-1">{building.type}</p>
+          <h3 className="font-semibold text-gray-900 text-sm">{building.name || 'Unknown Building'}</h3>
+          <p className="text-xs text-gray-500 mt-1">{building.type || 'Unknown Type'}</p>
         </div>
         <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(building.status)}`}>
           {getStatusIcon(building.status)}
-          <span className="capitalize">{building.status.replace('-', ' ')}</span>
+          <span className="capitalize">{(building.status || 'unknown').replace('-', ' ')}</span>
         </div>
       </div>
 
@@ -60,14 +70,14 @@ const BuildingCard = ({ building }) => {
           <Thermometer className="h-4 w-4 text-gray-400" />
           <div>
             <p className="text-xs text-gray-500">Current</p>
-            <p className="text-sm font-semibold">{building.currentTemp}°F</p>
+            <p className="text-sm font-semibold">{currentTemp}°F</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
           <Thermometer className="h-4 w-4 text-energy-green" />
           <div>
             <p className="text-xs text-gray-500">Recommended</p>
-            <p className="text-sm font-semibold text-energy-green">{building.recommendedTemp}°F</p>
+            <p className="text-sm font-semibold text-energy-green">{recommendedTemp}°F</p>
           </div>
         </div>
       </div>
@@ -75,17 +85,17 @@ const BuildingCard = ({ building }) => {
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-500">Energy Efficiency</span>
-          <span className={`text-sm font-semibold ${getEfficiencyColor(building.efficiency)}`}>
-            {building.efficiency}%
+          <span className={`text-sm font-semibold ${getEfficiencyColor(efficiency)}`}>
+            {efficiency}%
           </span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
             className={`h-2 rounded-full transition-all duration-300 ${
-              building.efficiency >= 80 ? 'bg-green-500' : 
-              building.efficiency >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+              efficiency >= 80 ? 'bg-green-500' : 
+              efficiency >= 60 ? 'bg-yellow-500' : 'bg-red-500'
             }`}
-            style={{ width: `${building.efficiency}%` }}
+            style={{ width: `${Math.min(100, Math.max(0, efficiency))}%` }}
           ></div>
         </div>
       </div>
@@ -97,7 +107,7 @@ const BuildingCard = ({ building }) => {
             <span className="text-xs text-gray-500">Potential Savings</span>
           </div>
           <span className="text-sm font-semibold text-energy-green">
-            {building.savings}% 
+            {savings.toLocaleString()}% 
             {tempDifference > 0 && (
               <span className="text-xs text-gray-500 ml-1">
                 (+{tempDifference}°F)
