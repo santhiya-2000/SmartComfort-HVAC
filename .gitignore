@@ -148,3 +148,4 @@ jspm_packages/
 *.db
 *.sqlite
 *.sqlite3
+data/*.zip
