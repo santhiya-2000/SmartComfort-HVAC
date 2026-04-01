@@ -149,3 +149,5 @@ jspm_packages/
 *.sqlite
 *.sqlite3
 data/*.zip
+
+/data/Bronco_Challenge_Data
