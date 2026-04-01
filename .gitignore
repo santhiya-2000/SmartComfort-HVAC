@@ -151,3 +151,4 @@ jspm_packages/
 data/*.zip
 
 /data/Bronco_Challenge_Data
+/data/*
